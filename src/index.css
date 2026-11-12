@@ -1,0 +1,217 @@
+@import '@fontsource/inter-tight/700.css';
+@import '@fontsource/chakra-petch/500.css';
+@import '@fontsource/chakra-petch/700.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Chamfered polygon utilities */
+.clip-chamfer {
+  clip-path: polygon(
+    8px 0%,
+    calc(100% - 8px) 0%,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0% calc(100% - 8px),
+    0% 8px
+  );
+}
+
+.clip-chamfer-pill {
+  clip-path: polygon(
+    12px 0%,
+    calc(100% - 12px) 0%,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0% calc(100% - 12px),
+    0% 12px
+  );
+}
+
+.clip-chamfer-sm {
+  clip-path: polygon(
+    4px 0%,
+    calc(100% - 4px) 0%,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    0% calc(100% - 4px),
+    0% 4px
+  );
+}
+
+.clip-chamfer-tr {
+  clip-path: polygon(
+    0% 0%,
+    calc(100% - 24px) 0%,
+    100% 24px,
+    100% 100%,
+    0% 100%
+  );
+}
+
+@layer base {
+  :root {
+    /* Enterprise Trustworthy Light Mode */
+    --background: 220 25% 97%;
+    --foreground: 224 40% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 40% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 40% 10%;
+
+    --primary: 224 75% 15%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 220 18% 92%;
+    --secondary-foreground: 224 40% 15%;
+
+    --muted: 220 16% 91%;
+    --muted-foreground: 220 15% 42%;
+
+    --accent: 220 18% 92%;
+    --accent-foreground: 224 40% 15%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 16% 86%;
+    --input: 220 16% 86%;
+    --ring: 28 95% 52%;
+
+    --radius: 0.75rem;
+
+    /* Accents - India Tricolor subtle tribute */
+    --saffron: 28 95% 50%;
+    --saffron-foreground: 0 0% 100%;
+
+    --india-green: 142 75% 33%;
+    --india-green-foreground: 0 0% 100%;
+
+    /* Neon Masked Token Accent */
+    --neon: 168 100% 38%;
+    --neon-foreground: 0 0% 100%;
+    --neon-dim: 168 85% 26%;
+    --token-bg: 168 90% 95%;
+    --token-border: 168 100% 38%;
+  }
+
+  .dark {
+    /* Hubtown Obsidian Navy & Ice Blue Palette */
+    --background: 220 78% 5%;      /* #020A19 Deep Midnight Navy */
+    --foreground: 226 100% 92%;    /* #D5E0FF Crisp Pale Ice Blue */
+
+    --card: 220 60% 8%;          /* #071126 Subtle Elevated Enclave */
+    --card-foreground: 226 100% 92%;
+
+    --popover: 220 60% 8%;
+    --popover-foreground: 226 100% 92%;
+
+    --primary: 226 100% 92%;
+    --primary-foreground: 220 78% 5%;
+
+    --secondary: 220 40% 12%;      /* #111a2d */
+    --secondary-foreground: 226 80% 88%;
+
+    --muted: 220 30% 12%;
+    --muted-foreground: 226 30% 65%;
+
+    --accent: 220 30% 15%;
+    --accent-foreground: 226 100% 92%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 226 100% 92%;
+
+    --border: 226 50% 40%;         /* subtle structural boundary */
+    --input: 226 40% 18%;
+    --ring: 185 100% 50%;
+
+    /* Accents - India Tricolor subtle tribute */
+    --saffron: 28 96% 54%;         /* #FF7F11 / #FF8811 Vibrant Warm Saffron */
+    --saffron-foreground: 0 0% 100%;
+
+    --india-green: 142 72% 43%;    /* #19A95C Vibrant Emerald Green */
+    --india-green-foreground: 0 0% 100%;
+
+    /* Cyber Neon Masked Token Accent */
+    --neon: 168 100% 50%;          /* #00FFD1 Ultra-vibrant Neon Cyan */
+    --neon-foreground: 180 100% 7%;
+    --neon-dim: 168 100% 34%;
+    --token-bg: 168 100% 8%;
+    --token-border: 168 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv02" 1, "cv03" 1, "cv04" 1;
+  }
+}
+
+/* Security grid and ambient glow utilities */
+.security-grid {
+  background-size: 36px 36px;
+  background-image: 
+    linear-gradient(to right, hsl(var(--border) / 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.35) 1px, transparent 1px);
+}
+
+.radar-sweep {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    hsl(var(--neon) / 0.15) 30deg,
+    transparent 60deg
+  );
+}
+
+.token-badge {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+  background: hsl(var(--token-bg) / 0.85);
+  border: 1px solid hsl(var(--token-border) / 0.65);
+  color: hsl(var(--neon));
+  box-shadow: 0 0 12px -2px hsl(var(--neon) / 0.35), inset 0 0 8px -2px hsl(var(--neon) / 0.2);
+}
+
+.saffron-gradient-text {
+  background: linear-gradient(135deg, hsl(var(--saffron)) 0%, #FFB067 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tricolor-border {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--saffron)) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    hsl(var(--india-green)) 100%
+  );
+}
+
+/* Glassmorphism for security ID cards */
+.id-card-glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.92) 0%,
+    hsl(var(--card) / 0.75) 100%
+  );
+  box-shadow: 
+    0 20px 50px -12px rgba(0, 0, 0, 0.55),
+    0 0 0 1px hsl(var(--border)),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}

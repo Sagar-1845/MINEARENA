@@ -1,0 +1,60 @@
+{
+  "banking": {
+    "max_allowed_risk_score": 50.0,
+    "block_on_injection": true,
+    "max_masked_entities": 8,
+    "blocked_pii_types": [
+      "AADHAAR"
+    ],
+    "always_mask": [
+      "PAN",
+      "AADHAAR",
+      "PHONE",
+      "EMAIL",
+      "GSTIN"
+    ],
+    "strict_leak_check": true
+  },
+  "hr": {
+    "always_mask": [
+      "NAME",
+      "PHONE",
+      "EMAIL",
+      "AADHAAR"
+    ],
+    "blocked_pii_types": [],
+    "max_allowed_risk_score": 60.0,
+    "block_on_injection": true,
+    "max_masked_entities": 15,
+    "strict_leak_check": true
+  },
+  "healthcare": {
+    "always_mask": [
+      "NAME",
+      "AADHAAR",
+      "PHONE",
+      "EMAIL"
+    ],
+    "blocked_pii_types": [
+      "AADHAAR"
+    ],
+    "max_allowed_risk_score": 45.0,
+    "block_on_injection": true,
+    "max_masked_entities": 10,
+    "strict_leak_check": true
+  },
+  "default": {
+    "always_mask": [
+      "AADHAAR",
+      "PAN",
+      "GSTIN",
+      "PHONE",
+      "EMAIL"
+    ],
+    "blocked_pii_types": [],
+    "max_allowed_risk_score": 65.0,
+    "block_on_injection": true,
+    "max_masked_entities": 10,
+    "strict_leak_check": true
+  }
+}

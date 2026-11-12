@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Python Virtual Environments & Caches
+.venv/
+.venv*/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.pytest_cache/
+
+# Production Build Output
+dist/
+build/
+out/
+
+# Database & Persistent Vault Storage (Contains Local Session State)
+*.db
+*.sqlite
+*.sqlite3
+privacy_vault.db
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Local Logs, Diagnostics & Temporary Assets
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+screenshot_*.png
+lighthouse*.json
+privaguard_member3_security.zip
+scratch/
+.antigravity/
+
+# Temporary / Scratch Verification Scripts
+verify_*.js
+verify_*.cjs
+inspect_*.js
+saveweb2zip-*/
+PRIVAGUARD_AI/
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

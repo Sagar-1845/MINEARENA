@@ -1,0 +1,86 @@
+{
+  "gateway": "ZeroLeak AI",
+  "module": "Member 3 - Security and Privacy Intelligence",
+  "department_policy_applied": {
+    "name": "banking",
+    "max_allowed_risk_score": 50.0,
+    "block_on_injection": true,
+    "max_masked_entities": 8,
+    "blocked_pii_types": [
+      "AADHAAR"
+    ],
+    "always_mask": [
+      "PAN",
+      "AADHAAR",
+      "PHONE",
+      "EMAIL",
+      "GSTIN"
+    ],
+    "strict_leak_check": true
+  },
+  "stage_1_pre_payload_assessment": {
+    "can_proceed": false,
+    "risk_report": {
+      "score": 67.0,
+      "severity": "HIGH",
+      "action_recommendation": "WARN",
+      "factors": [
+        {
+          "name": "pii_name_count",
+          "severity": "MEDIUM",
+          "weight": 10.0,
+          "description": "Presence of 1 masked NAME entity/entities (base weight: 10.0)."
+        },
+        {
+          "name": "pii_phone_count",
+          "severity": "MEDIUM",
+          "weight": 15.0,
+          "description": "Presence of 1 masked PHONE entity/entities (base weight: 15.0)."
+        },
+        {
+          "name": "pii_pan_count",
+          "severity": "HIGH",
+          "weight": 30.0,
+          "description": "Presence of 1 masked PAN entity/entities (base weight: 30.0)."
+        },
+        {
+          "name": "pii_aggregation_diversity",
+          "severity": "HIGH",
+          "weight": 12.0,
+          "description": "Cross-identifier correlation risk: 3 distinct PII types present simultaneously increases re-identification potential."
+        }
+      ],
+      "summary": "Engineering indicator: Composite risk score is 67.00/100.0 (HIGH). Identified 4 risk factor(s). Recommended action: WARN.",
+      "engineering_indicator": "Engineering indicator: Calculated risk score is a composite heuristic for ZeroLeak AI prototype evaluation. It does not certify an absolute or infallible security assessment."
+    },
+    "injection_result": {
+      "is_flagged": false,
+      "confidence_score": 0.0,
+      "matched_indicators": [],
+      "categories": [],
+      "engineering_indicator": "Engineering indicator: Static heuristic detection flagged 0 pattern(s) with confidence 0.00. Serves as an engineering indicator for prototype review; not an absolute security guarantee."
+    },
+    "policy_result": {
+      "action": "BLOCK",
+      "passed": false,
+      "violations": [
+        "Risk score 67.00 exceeds policy maximum threshold of 50.00."
+      ],
+      "warnings": [],
+      "engineering_indicator": "Engineering indicator: Policy 'banking' evaluation yielded 1 violation(s) and 0 warning(s). Result is an operational decision for prototype pipeline dispatch, not an absolute guarantee."
+    },
+    "engineering_indicator": "Engineering indicator: Pre-payload stage finished with action 'BLOCK'. Risk score: 67.0, Injection flagged: False. Provides an engineering indicator for prototype gateway pipeline."
+  },
+  "stage_2_outbound_security_assessment": {
+    "can_dispatch_to_llm": true,
+    "leak_result": {
+      "has_leak": false,
+      "leak_count": 0,
+      "leaked_items": [],
+      "summary": "Engineering indicator: Pre-LLM leak check passed. No unmasked sensitive PII detected in outbound payload.",
+      "engineering_indicator": "Engineering indicator: Pattern and entity-origin verification completed. Identified 0 potential leak artifact(s). Prototype evaluation measure to protect data privacy prior to external transit."
+    },
+    "engineering_indicator": "Engineering indicator: Outbound leak verification evaluated. Detected leaks: 0. Can dispatch: True. Serves as an engineering indicator for privacy boundary compliance."
+  },
+  "engineering_indicator": "Engineering indicator: End-to-end security pipeline evaluation result."
+}
