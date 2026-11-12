@@ -1,0 +1,11 @@
+import{c as e}from"./index-DDFn6x68.js";/**
+ * @license lucide-react v1.72.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const a={name:"download",size:24,node:[["path",{d:"M12 15V3",key:"m9g1x1"}],["path",{d:"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4",key:"ih7n3h"}],["path",{d:"m7 10 5 5 5-5",key:"brsn70"}]]};a.node;const c=e(a);/**
+ * @license lucide-react v1.72.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const o={name:"search",size:24,node:[["path",{d:"m21 21-4.34-4.34",key:"14j7rj"}],["circle",{cx:"11",cy:"11",r:"8",key:"4ej97u"}]]};o.node;const t=e(o);export{c as D,t as S};
