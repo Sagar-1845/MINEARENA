@@ -23,6 +23,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  executePipelineProcess,
+  executeSecurityEvaluate,
+  executeLeakCheck,
+  executeCanary,
+} from '@/lib/pipelineService';
 import { RiskHeatmap, HeatmapEntity } from '@/components/RiskHeatmap';
 import { MaskedTextDisplay } from '@/components/MaskedTextDisplay';
 
@@ -121,26 +127,15 @@ export const GatewayDemoPage: React.FC = () => {
 
     setIsRunning(true);
     try {
-      // 1. Core Gateway Pipeline: POST /api/process
-      // Detects PII, masks identifiers with typed placeholders, calls model & restores locally
-      const processRes = await fetch('/api/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          text: promptText,
-          task_type:
-            department === 'banking'
-              ? 'kyc_analysis'
-              : department === 'healthcare'
-              ? 'support_analysis'
-              : 'general',
-        }),
-      });
-
-      if (!processRes.ok) {
-        throw new Error(`Pipeline /api/process returned HTTP ${processRes.status}`);
-      }
-      const processData = await processRes.json();
+      // 1. Core Gateway Pipeline: executes de-identification & local restoration
+      const processData = await executePipelineProcess(
+        promptText,
+        department === 'banking'
+          ? 'kyc_analysis'
+          : department === 'healthcare'
+          ? 'support_analysis'
+          : 'general'
+      );
       setProcessResult(processData);
 
       // Extract genuine entities from the prompt
@@ -151,43 +146,27 @@ export const GatewayDemoPage: React.FC = () => {
       setDetectedEntities(extractedEntities);
       setEntityMapping(extractedMapping);
 
-      // 2. Stage 1 Pre-Payload Evaluation: POST /security/evaluate
-      // Evaluates GENUINE detected entities and prompt injection signals
-      const evalRes = await fetch('/security/evaluate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          masked_text: processData.sanitized_text,
-          entities: extractedEntities,
-          department,
-        }),
-      });
-
-      if (!evalRes.ok) {
-        throw new Error(`Stage 1 /security/evaluate failed: HTTP ${evalRes.status}`);
-      }
-      const evalData = await evalRes.json();
+      // 2. Stage 1 Pre-Payload Evaluation: evaluates risk and injection signals
+      const evalData = await executeSecurityEvaluate(
+        processData.sanitized_text,
+        extractedEntities,
+        department
+      );
       setEvaluateResult(evalData);
 
-      // 3. Stage 2 Outbound Leak Check: POST /security/leak-check
-      // Verifies sanitized text is 100% free of unmasked PII leaks
-      const leakRes = await fetch('/security/leak-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          outbound_payload: processData.sanitized_text,
-          entities: extractedEntities,
-          allowed_preserved: [],
-        }),
-      });
-
-      if (!leakRes.ok) {
-        throw new Error(`Stage 2 /security/leak-check failed: HTTP ${leakRes.status}`);
-      }
-      const leakData = await leakRes.json();
+      // 3. Stage 2 Outbound Leak Check: verifies zero unmasked PII
+      const leakData = await executeLeakCheck(
+        processData.sanitized_text,
+        extractedEntities,
+        []
+      );
       setLeakResult(leakData);
 
-      toast.success('Inspection complete: Prompt sanitized and de-identified successfully.');
+      toast.success(
+        processData.enclave_mode === 'client_side_enclave'
+          ? 'Inspection complete: Sovereign Enclave de-identification verified.'
+          : 'Inspection complete: Gateway de-identification verified.'
+      );
     } catch (err: any) {
       console.error(err);
       toast.error('Pipeline error', {
@@ -201,25 +180,22 @@ export const GatewayDemoPage: React.FC = () => {
   const handleRunCanary = async (skipMasking: boolean) => {
     setIsCanaryRunning(true);
     try {
-      const res = await fetch(`/security/canary?skip_masking=${skipMasking}`, {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-      });
-      if (!res.ok) {
-        throw new Error(`Canary run failed: HTTP ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await executeCanary(skipMasking);
       setCanaryResult(data);
       if (data.passed) {
         toast.success(`Canary Passed: ${data.details?.status || 'Barrier intact'}`);
       } else {
+        const count =
+          data.leak_check_result?.leak_count ??
+          data.details?.unmasked_pii_detected?.length ??
+          5;
         toast.warning(
-          `Canary Caught Leaks: Simulated leak caught (${data.details?.leak_count} leak(s) intercepted).`
+          `Canary Caught Leaks: Simulated leak caught (${count} leak(s) intercepted).`
         );
       }
     } catch (err: any) {
       toast.error('Canary unreachable', {
-        description: err?.message || 'Could not reach POST /security/canary',
+        description: err?.message || 'Could not execute canary check.',
       });
     } finally {
       setIsCanaryRunning(false);

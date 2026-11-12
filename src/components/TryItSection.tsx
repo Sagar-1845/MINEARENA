@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { executePipelineProcess, executeLeakCheck } from '@/lib/pipelineService';
 
 // Exact schema returned by security/api.py
 export interface LeakedItemMatch {
@@ -62,55 +63,22 @@ export const TryItSection: React.FC = () => {
     setIsLoading(true);
     try {
       // Step 1: Call /api/process to mask the raw text with real typed placeholders
-      let maskedText = inputText;
-      try {
-        const procRes = await fetch('/api/process', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({
-            text: inputText,
-            task_type: department === 'banking' ? 'kyc_analysis' : 'general',
-          }),
-        });
-        if (procRes.ok) {
-          const procData = await procRes.json();
-          maskedText = procData.sanitized_text || inputText;
-        }
-      } catch (_) {
-        // Fallback to local masking pattern if offline
-      }
+      const procData = await executePipelineProcess(
+        inputText,
+        department === 'banking' ? 'kyc_analysis' : 'general'
+      );
+      const maskedText = procData.sanitized_text || inputText;
       setMaskedResultText(maskedText);
 
       // Step 2: Call /security/leak-check to verify the outbound payload
-      let response: Response;
-      const payloadBody = {
-        outbound_payload: maskedText,
-        entities: [
-          { type: 'NAME', value: 'Aarav Sharma' },
-          { type: 'AADHAAR', value: '2345 6789 0124' },
-          { type: 'PAN', value: 'ABCDE1234F' },
-          { type: 'PHONE', value: '+91 9876543210' },
-        ],
-        allowed_preserved: [],
-      };
+      const entities = [
+        { type: 'NAME', value: 'Aarav Sharma' },
+        { type: 'AADHAAR', value: '2345 6789 0124' },
+        { type: 'PAN', value: 'ABCDE1234F' },
+        { type: 'PHONE', value: '+91 9876543210' },
+      ];
 
-      response = await fetch('/security/leak-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(payloadBody),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data: SecurityApiResponse = await response.json();
+      const data: any = await executeLeakCheck(maskedText, entities, []);
       setResponseResult(data);
 
       const count = data.leak_count ?? data.leakage_count ?? 0;

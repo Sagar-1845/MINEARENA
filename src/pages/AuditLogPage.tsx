@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { executeCanary } from '@/lib/pipelineService';
 
 export interface AuditRecord {
   id: string;
@@ -117,11 +118,7 @@ export const AuditLogPage: React.FC = () => {
   const handleTriggerCanaryAudit = async () => {
     setIsTriggeringCanary(true);
     try {
-      const res = await fetch('/security/canary?skip_masking=false', {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await executeCanary(false);
 
       const newRecord: AuditRecord = {
         id: `AUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -139,7 +136,7 @@ export const AuditLogPage: React.FC = () => {
       toast.success('Live canary audit entry generated and sealed.');
     } catch (err: any) {
       toast.error('Canary audit trigger failed', {
-        description: err?.message || 'Could not reach POST /security/canary',
+        description: err?.message || 'Could not reach canary service',
       });
     } finally {
       setIsTriggeringCanary(false);

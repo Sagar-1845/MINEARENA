@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { fetchSecurityPolicies, executeCanary } from '@/lib/pipelineService';
 
 export interface DepartmentPolicy {
   max_allowed_risk_score: number;
@@ -28,11 +29,7 @@ export interface DepartmentPolicy {
 }
 
 const fetchPolicies = async (): Promise<Record<string, DepartmentPolicy>> => {
-  const res = await fetch('/security/policies');
-  if (!res.ok) {
-    throw new Error(`Failed to fetch /security/policies: HTTP ${res.status}`);
-  }
-  return res.json();
+  return (await fetchSecurityPolicies()) as Record<string, DepartmentPolicy>;
 };
 
 export const MetricsPage: React.FC = () => {
@@ -56,13 +53,7 @@ export const MetricsPage: React.FC = () => {
   const handleRunCanaryEvaluation = async () => {
     setIsTestingCanary(true);
     try {
-      const res = await fetch('/security/canary?skip_masking=false', {
-        method: 'POST',
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await executeCanary(false);
       setCanaryResult(data);
       toast.success('Live canary evaluation executed successfully.');
     } catch (err: any) {
