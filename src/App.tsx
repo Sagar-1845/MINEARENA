@@ -12,6 +12,7 @@ const GatewayDemoPage = lazy(() => import('@/pages/GatewayDemoPage'));
 const AuditLogPage = lazy(() => import('@/pages/AuditLogPage'));
 const MetricsPage = lazy(() => import('@/pages/MetricsPage'));
 const DatasetPage = lazy(() => import('@/pages/DatasetPage'));
+const DocumentIntelligencePage = lazy(() => import('@/pages/DocumentIntelligencePage'));
 
 // Route loading fallback with smooth skeleton/pulse
 const RouteLoadingFallback: React.FC = () => (
@@ -45,7 +46,7 @@ const AppContent: React.FC<{
       {/* Sonner Toast Notification Center */}
       <Toaster position="top-right" richColors closeButton theme={theme} />
 
-      {/* Render top Navbar on internal operational pages (/demo, /audit, /metrics, /dataset) */}
+      {/* Render top Navbar on internal operational pages (/demo, /documents, /audit, /metrics, /dataset) */}
       {!isHome && <Navbar theme={theme} onToggleTheme={onToggleTheme} />}
 
       <main className="relative">
@@ -57,13 +58,16 @@ const AppContent: React.FC<{
             {/* Route 2: Gateway Demo Page */}
             <Route path="/demo" element={<GatewayDemoPage />} />
 
-            {/* Route 3: Audit Log Page */}
+            {/* Route 3: Universal Document Intelligence Page */}
+            <Route path="/documents" element={<DocumentIntelligencePage />} />
+
+            {/* Route 4: Audit Log Page */}
             <Route path="/audit" element={<AuditLogPage />} />
 
-            {/* Route 4: Metrics Page */}
+            {/* Route 5: Metrics Page */}
             <Route path="/metrics" element={<MetricsPage />} />
 
-            {/* Route 5: Synthetic Dataset Page */}
+            {/* Route 6: Synthetic Dataset Page */}
             <Route path="/dataset" element={<DatasetPage />} />
 
             {/* Catch-all redirect to Landing */}

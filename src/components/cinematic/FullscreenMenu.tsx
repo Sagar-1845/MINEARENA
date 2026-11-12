@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { CHAPTERS } from './types';
-import { X, ArrowRight, ShieldCheck, Cpu, Database, Activity } from 'lucide-react';
+import { X, ArrowRight, ShieldCheck, Cpu, Database, Activity, FileText } from 'lucide-react';
 
 interface FullscreenMenuProps {
   isOpen: boolean;
@@ -73,7 +73,7 @@ export const FullscreenMenu: React.FC<FullscreenMenuProps> = ({
       {/* Main Menu Links Grid */}
       <div className="relative z-10 my-auto grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 items-start max-w-7xl mx-auto w-full pt-8 pb-8">
         {/* Left Column: Chapters / Storyline Navigation */}
-        <div className="md:col-span-6 flex flex-col gap-6">
+        <div className="md:col-span-5 flex flex-col gap-6">
           <div className="text-[11px] font-ui tracking-[0.2em] uppercase text-[#94a3b8] flex items-center gap-2">
             <span>01 // CHAPTER ARCHITECTURE</span>
             <span className="h-[1px] flex-1 bg-white/10" />
@@ -106,7 +106,7 @@ export const FullscreenMenu: React.FC<FullscreenMenuProps> = ({
         </div>
 
         {/* Right Column: Gateway Routes & Live Tools */}
-        <div className="md:col-span-6 flex flex-col gap-6">
+        <div className="md:col-span-7 flex flex-col gap-6">
           <div className="text-[11px] font-ui tracking-[0.2em] uppercase text-[#94a3b8] flex items-center gap-2">
             <span>02 // LIVE ENTERPRISE MODULES</span>
             <span className="h-[1px] flex-1 bg-white/10" />
@@ -126,6 +126,22 @@ export const FullscreenMenu: React.FC<FullscreenMenuProps> = ({
               <div className="font-headline text-lg text-white mb-1">LIVE GATEWAY</div>
               <p className="text-xs text-[#94a3b8] font-body line-clamp-2">
                 Process unstructured prompts, inspect redaction tokens & real-time reinsertion.
+              </p>
+            </Link>
+
+            {/* Document Intelligence Route */}
+            <Link
+              to="/documents"
+              onClick={onClose}
+              className="p-5 border border-white/10 hover:border-[#37d3fc] bg-[#0a1f3d]/40 hover:bg-[#0a1f3d]/80 rounded transition-all group clip-chamfer"
+            >
+              <div className="flex items-center justify-between mb-3 text-[#37d3fc]">
+                <FileText className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </div>
+              <div className="font-headline text-lg text-white mb-1">DOCUMENT INTELLIGENCE</div>
+              <p className="text-xs text-[#94a3b8] font-body line-clamp-2">
+                Universal multi-format parser, digital PDF, OCR, spreadsheets & memory sandbox.
               </p>
             </Link>
 
@@ -165,7 +181,7 @@ export const FullscreenMenu: React.FC<FullscreenMenuProps> = ({
             <Link
               to="/dataset"
               onClick={onClose}
-              className="p-5 border border-white/10 hover:border-[#37d3fc] bg-[#0a1f3d]/40 hover:bg-[#0a1f3d]/80 rounded transition-all group clip-chamfer"
+              className="p-5 border border-white/10 hover:border-[#37d3fc] bg-[#0a1f3d]/40 hover:bg-[#0a1f3d]/80 rounded transition-all group clip-chamfer sm:col-span-2"
             >
               <div className="flex items-center justify-between mb-3 text-[#37d3fc]">
                 <Database className="w-5 h-5" />

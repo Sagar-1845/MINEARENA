@@ -12,6 +12,7 @@ import {
   BarChart3,
   Database,
   Terminal,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ interface NavbarProps {
 
 const NAV_LINKS = [
   { name: 'Gateway Demo', path: '/demo', icon: Play },
+  { name: 'Document Intelligence', path: '/documents', icon: FileText },
   { name: 'Audit Log', path: '/audit', icon: FileCheck2 },
   { name: 'Metrics', path: '/metrics', icon: BarChart3 },
   { name: 'Dataset', path: '/dataset', icon: Database },
