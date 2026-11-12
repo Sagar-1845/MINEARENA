@@ -11,6 +11,55 @@
 export interface DetectedEntity {
   type: string;
   value: string;
+  confidence?: number;
+}
+
+export interface MaskingPolicy {
+  maskAadhaar: boolean;
+  maskPan: boolean;
+  maskPhone: boolean;
+  maskEmail: boolean;
+  maskName: boolean; // default: false (per user requirement: human names are NOT masked)
+  maskGstin: boolean;
+  maskPassport: boolean;
+  maskVoterId: boolean;
+  maskFinancial: boolean;
+  maskingStyle: 'placeholder' | 'blur' | 'redacted' | 'synthetic';
+  riskThreshold: number; // 10 to 90
+  blockOnInjection: boolean;
+  strictLeakCheck: boolean;
+}
+
+export const DEFAULT_MASKING_POLICY: MaskingPolicy = {
+  maskAadhaar: true,
+  maskPan: true,
+  maskPhone: true,
+  maskEmail: true,
+  maskName: false, // PRESERVED BY DEFAULT: Names like "Aarav Sharma" remain visible!
+  maskGstin: true,
+  maskPassport: true,
+  maskVoterId: true,
+  maskFinancial: true,
+  maskingStyle: 'placeholder',
+  riskThreshold: 50,
+  blockOnInjection: true,
+  strictLeakCheck: true,
+};
+
+export function getStoredMaskingPolicy(): MaskingPolicy {
+  try {
+    const raw = localStorage.getItem('zeroleak_masking_policy');
+    if (raw) {
+      return { ...DEFAULT_MASKING_POLICY, ...JSON.parse(raw) };
+    }
+  } catch (_) {}
+  return DEFAULT_MASKING_POLICY;
+}
+
+export function saveStoredMaskingPolicy(policy: MaskingPolicy): void {
+  try {
+    localStorage.setItem('zeroleak_masking_policy', JSON.stringify(policy));
+  } catch (_) {}
 }
 
 export interface PipelineProcessResult {
@@ -113,7 +162,7 @@ export const DEFAULT_POLICIES: Record<string, any> = {
     strict_leak_check: true,
   },
   hr: {
-    always_mask: ['NAME', 'PHONE', 'EMAIL', 'AADHAAR'],
+    always_mask: ['PHONE', 'EMAIL', 'AADHAAR'],
     blocked_pii_types: [],
     max_allowed_risk_score: 60.0,
     block_on_injection: true,
@@ -121,7 +170,7 @@ export const DEFAULT_POLICIES: Record<string, any> = {
     strict_leak_check: true,
   },
   healthcare: {
-    always_mask: ['NAME', 'AADHAAR', 'PHONE', 'EMAIL'],
+    always_mask: ['AADHAAR', 'PHONE', 'EMAIL'],
     blocked_pii_types: ['AADHAAR'],
     max_allowed_risk_score: 45.0,
     block_on_injection: true,
@@ -139,17 +188,18 @@ export const DEFAULT_POLICIES: Record<string, any> = {
 };
 
 // ── PII Patterns for Local Enclave Detection ─────────────────────────────────
-const PII_PATTERNS: { type: string; regex: RegExp }[] = [
-  { type: 'AADHAAR', regex: /\b\d{4}\s\d{4}\s\d{4}\b|\b\d{12}\b/g },
-  { type: 'PAN', regex: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g },
-  { type: 'PHONE', regex: /(?:\+91[\s-]?)?[6-9]\d{9}\b/g },
-  { type: 'EMAIL', regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g },
-  { type: 'GSTIN', regex: /\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}\b/g },
-  { type: 'PASSPORT', regex: /\b[A-PR-WYa-pr-wy][1-9]\d\s?\d{4}[1-9]\b/g },
-  { type: 'VOTER_ID', regex: /\b[A-Z]{3}[0-9]{7}\b/g },
+export const PII_PATTERNS: { type: string; regex: RegExp; key: keyof MaskingPolicy }[] = [
+  { type: 'AADHAAR', regex: /\b\d{4}\s\d{4}\s\d{4}\b|\b\d{12}\b/g, key: 'maskAadhaar' },
+  { type: 'PAN', regex: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g, key: 'maskPan' },
+  { type: 'PHONE', regex: /(?:\+91[\s-]?)?[6-9]\d{9}\b/g, key: 'maskPhone' },
+  { type: 'EMAIL', regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, key: 'maskEmail' },
+  { type: 'GSTIN', regex: /\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}\b/g, key: 'maskGstin' },
+  { type: 'PASSPORT', regex: /\b[A-PR-WYa-pr-wy][1-9]\d\s?\d{4}[1-9]\b/g, key: 'maskPassport' },
+  { type: 'VOTER_ID', regex: /\b[A-Z]{3}[0-9]{7}\b/g, key: 'maskVoterId' },
   {
     type: 'NAME',
     regex: /\b(?:Aarav Sharma|Priya Venkatesh|Ramesh Kumar|Anita Rao|Vikram Singh|Rajesh Patel)\b/g,
+    key: 'maskName',
   },
 ];
 
@@ -158,17 +208,60 @@ const INJECTION_REGEX =
   /(?:ignore\s+all\s+previous\s+instructions|system\s+message|dump\s+anonymization\s+map|output\s+the\s+raw\s+encryption\s+keys|bypass\s+(?:zeroleak|privaguard)|restore\s+tokens\s+prematurely)/i;
 
 /**
+ * Format mask values according to chosen MaskingStyle
+ */
+export function formatMaskValue(
+  type: string,
+  rawVal: string,
+  counter: number,
+  style: 'placeholder' | 'blur' | 'redacted' | 'synthetic'
+): string {
+  if (style === 'placeholder') {
+    return `[${type}_${counter}]`;
+  }
+  if (style === 'blur') {
+    if (type === 'AADHAAR') return '**** **** ' + rawVal.slice(-4);
+    if (type === 'PAN') return '*****' + rawVal.slice(-5);
+    if (type === 'PHONE') return '+91 ******' + rawVal.slice(-4);
+    if (type === 'EMAIL') {
+      const parts = rawVal.split('@');
+      return (parts[0]?.slice(0, 2) || 'u') + '***@' + (parts[1] || 'domain.com');
+    }
+    return rawVal.slice(0, 2) + '******' + rawVal.slice(-2);
+  }
+  if (style === 'redacted') {
+    return `[REDACTED_${type}]`;
+  }
+  if (style === 'synthetic') {
+    if (type === 'AADHAAR') return '9876 5432 1098';
+    if (type === 'PAN') return 'ABCDE9999Z';
+    if (type === 'PHONE') return '+91 9999988888';
+    if (type === 'EMAIL') return 'synthetic.user@enclave.shield';
+    if (type === 'NAME') return 'Citizen Alpha';
+    return `SYNTH_${type}`;
+  }
+  return `[${type}_${counter}]`;
+}
+
+/**
  * Executes Core Gateway Process with seamless client-side sovereign enclave fallback.
  */
 export async function executePipelineProcess(
   promptText: string,
-  taskType: string = 'general'
+  taskType: string = 'general',
+  customPolicy?: MaskingPolicy
 ): Promise<PipelineProcessResult> {
+  const policy = customPolicy || getStoredMaskingPolicy();
+
   try {
     const res = await fetch('/api/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ text: promptText, task_type: taskType }),
+      body: JSON.stringify({
+        text: promptText,
+        task_type: taskType,
+        policy_overrides: policy,
+      }),
     });
 
     if (res.ok) {
@@ -186,31 +279,36 @@ export async function executePipelineProcess(
   const entityCount: Record<string, number> = {};
   const mapping: Record<string, string> = {};
 
-  for (const { type, regex } of PII_PATTERNS) {
+  for (const { type, regex, key } of PII_PATTERNS) {
+    // If the active policy has disabled masking for this type, do NOT mask it!
+    const shouldMask = policy[key] !== false;
+
     let match;
     const re = new RegExp(regex.source, regex.flags);
     while ((match = re.exec(promptText)) !== null) {
       const val = match[0];
       entities.push({ type, value: val });
-      entityCount[type] = (entityCount[type] || 0) + 1;
-      const placeholder = `[${type}_${entityCount[type]}]`;
-      mapping[placeholder] = val;
-      sanitized = sanitized.replace(val, placeholder);
+
+      if (shouldMask) {
+        entityCount[type] = (entityCount[type] || 0) + 1;
+        const maskToken = formatMaskValue(type, val, entityCount[type], policy.maskingStyle);
+        mapping[maskToken] = val;
+        sanitized = sanitized.replace(val, maskToken);
+      }
     }
   }
 
   // Synthetic local LLM response preserving placeholders
   let llmRaw = '';
-  if (entities.length === 0) {
-    llmRaw = `Information verified. Standard enterprise security policies apply. No sensitive identifiers were detected in the prompt context.`;
+  if (entities.filter((e) => policy[PII_PATTERNS.find((p) => p.type === e.type)?.key || 'maskName'] !== false).length === 0) {
+    llmRaw = `Information verified. Standard enterprise security policies apply. No sensitive identifiers were de-identified under the current policy envelope.`;
   } else {
-    llmRaw = `Processed request for ${
-      mapping['[NAME_1]'] ? '[NAME_1]' : 'customer record'
-    }. KYC credentials ${
-      mapping['[AADHAAR_1]'] ? '[AADHAAR_1]' : ''
-    } and tax ID ${
-      mapping['[PAN_1]'] ? '[PAN_1]' : ''
-    } de-identified in enclave memory. Verification status: COMPLIANT_DPDP_SEC_8.`;
+    // Check if name is preserved in text vs masked
+    const nameMention = policy.maskName && mapping['[NAME_1]'] ? '[NAME_1]' : 'the specified applicant';
+    const aadhaarMention = mapping['[AADHAAR_1]'] || '**** **** 0124';
+    const panMention = mapping['[PAN_1]'] || '*****1234F';
+
+    llmRaw = `Processed request for ${nameMention}. KYC credentials (${aadhaarMention}) and tax ID (${panMention}) de-identified in sovereign enclave memory. Verification status: COMPLIANT_DPDP_SEC_8.`;
   }
 
   // Local re-insertion swapping back real values
@@ -263,8 +361,11 @@ export async function executePipelineProcess(
 export async function executeSecurityEvaluate(
   maskedText: string,
   entities: DetectedEntity[],
-  department: string = 'banking'
+  department: string = 'banking',
+  customPolicy?: MaskingPolicy
 ): Promise<SecurityEvaluationResult> {
+  const activePolicy = customPolicy || getStoredMaskingPolicy();
+
   try {
     const res = await fetch('/security/evaluate', {
       method: 'POST',
@@ -370,11 +471,13 @@ export async function executeSecurityEvaluate(
     action = 'WARN';
   }
 
-  // Department policy enforcement
+  // Department policy enforcement with custom risk threshold override
   const policy = DEFAULT_POLICIES[department] || DEFAULT_POLICIES.default;
-  if (isInjection && policy.block_on_injection) {
+  const maxRisk = activePolicy.riskThreshold ?? policy.max_allowed_risk_score;
+
+  if (isInjection && activePolicy.blockOnInjection) {
     action = 'BLOCK';
-  } else if (compositeScore > policy.max_allowed_risk_score) {
+  } else if (compositeScore > maxRisk) {
     action = 'BLOCK';
   }
 
@@ -403,7 +506,7 @@ export async function executeSecurityEvaluate(
       passed: action !== 'BLOCK',
       reason:
         action === 'BLOCK'
-          ? `Policy threshold exceeded for ${department.toUpperCase()} (score ${compositeScore.toFixed(1)} > max ${policy.max_allowed_risk_score}).`
+          ? `Policy threshold exceeded for ${department.toUpperCase()} (score ${compositeScore.toFixed(1)} > max ${maxRisk}).`
           : `All constraints satisfied for ${department.toUpperCase()} policy envelope.`,
       department,
     },
@@ -535,6 +638,83 @@ export async function executeCanary(skipMasking: boolean = false): Promise<Canar
       leaked_entities: [],
       engineering_indicator:
         'Engineering indicator: 0 leaks identified across all synthetic canary tokens.',
+    },
+  };
+}
+
+/**
+ * Document processing utility that extracts text, applies policy-driven redaction,
+ * and produces side-by-side sanitization and local restoration.
+ */
+export function processDocumentContent(
+  rawContent: string,
+  customPolicy?: MaskingPolicy
+): {
+  originalText: string;
+  sanitizedText: string;
+  restoredText: string;
+  detectedEntities: DetectedEntity[];
+  mapping: Record<string, string>;
+  stats: {
+    totalEntities: number;
+    maskedCount: number;
+    preservedCount: number;
+    leakRiskScore: number;
+  };
+} {
+  const policy = customPolicy || getStoredMaskingPolicy();
+  let sanitized = rawContent;
+  const detectedEntities: DetectedEntity[] = [];
+  const entityCount: Record<string, number> = {};
+  const mapping: Record<string, string> = {};
+
+  let maskedCount = 0;
+  let preservedCount = 0;
+
+  for (const { type, regex, key } of PII_PATTERNS) {
+    const shouldMask = policy[key] !== false;
+    let match;
+    const re = new RegExp(regex.source, regex.flags);
+
+    while ((match = re.exec(rawContent)) !== null) {
+      const val = match[0];
+      detectedEntities.push({ type, value: val });
+
+      if (shouldMask) {
+        entityCount[type] = (entityCount[type] || 0) + 1;
+        const maskToken = formatMaskValue(type, val, entityCount[type], policy.maskingStyle);
+        mapping[maskToken] = val;
+        sanitized = sanitized.split(val).join(maskToken);
+        maskedCount++;
+      } else {
+        preservedCount++;
+      }
+    }
+  }
+
+  // Local re-insertion swapping back real values in enclave
+  let restored = sanitized;
+  for (const [ph, rawVal] of Object.entries(mapping)) {
+    restored = restored.split(ph).join(rawVal);
+  }
+
+  // Risk computation: 0 if all sensitive IDs are masked, otherwise proportional to unmasked sensitive IDs
+  const unmaskedHighRisk = detectedEntities.filter(
+    (e) => e.type !== 'NAME' && !policy[PII_PATTERNS.find((p) => p.type === e.type)?.key || 'maskName']
+  ).length;
+  const leakRiskScore = Math.min(100, unmaskedHighRisk * 25);
+
+  return {
+    originalText: rawContent,
+    sanitizedText: sanitized,
+    restoredText: restored,
+    detectedEntities,
+    mapping,
+    stats: {
+      totalEntities: detectedEntities.length,
+      maskedCount,
+      preservedCount,
+      leakRiskScore,
     },
   };
 }

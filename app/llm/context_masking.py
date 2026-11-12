@@ -102,71 +102,65 @@ TASK_RULES: Dict[str, TaskMaskingRule] = {
     TaskType.SUMMARIZATION: TaskMaskingRule(
         task_type=TaskType.SUMMARIZATION,
         additional_mask_types=frozenset({
-            EntityType.NAME, EntityType.EMAIL, EntityType.PHONE,
+            EntityType.EMAIL, EntityType.PHONE,
             EntityType.ADDRESS, EntityType.DATE_OF_BIRTH,
         }),
-        preserve_types=frozenset(),   # summaries don't need any raw PII
-        description="Full masking — summaries should not expose any personal data.",
+        preserve_types=frozenset({EntityType.NAME}),
+        description="Preserve customer/user names for document context; mask sensitive contact and biometric IDs.",
     ),
 
     TaskType.EXTRACTION: TaskMaskingRule(
         task_type=TaskType.EXTRACTION,
         additional_mask_types=frozenset({
-            EntityType.NAME, EntityType.EMAIL, EntityType.PHONE,
+            EntityType.EMAIL, EntityType.PHONE,
             EntityType.ADDRESS, EntityType.DATE_OF_BIRTH,
         }),
-        preserve_types=frozenset(),   # return typed placeholders, not raw values
-        description="All PII masked; LLM returns placeholders in extracted fields.",
+        preserve_types=frozenset({EntityType.NAME}),
+        description="Extract fields preserving person name while masking statutory identifiers.",
     ),
 
     TaskType.SUPPORT_ANALYSIS: TaskMaskingRule(
         task_type=TaskType.SUPPORT_ANALYSIS,
         additional_mask_types=frozenset({
-            EntityType.NAME, EntityType.EMAIL, EntityType.PHONE,
+            EntityType.EMAIL, EntityType.PHONE,
             EntityType.ADDRESS,
         }),
-        preserve_types=frozenset(),
-        description="Mask personal identifiers; preserve issue description context.",
+        preserve_types=frozenset({EntityType.NAME}),
+        description="Mask contact identifiers; preserve person name and issue description context.",
     ),
 
     TaskType.LOAN_ANALYSIS: TaskMaskingRule(
         task_type=TaskType.LOAN_ANALYSIS,
         additional_mask_types=frozenset({
-            EntityType.NAME, EntityType.EMAIL, EntityType.PHONE,
+            EntityType.EMAIL, EntityType.PHONE,
             EntityType.ADDRESS, EntityType.DATE_OF_BIRTH,
         }),
-        preserve_types=frozenset({
-            # Financial figures that are not PII can be preserved
-            # e.g., loan amount, monthly income as numeric values
-            # (no entity type for plain numbers — they won't be in the mapping)
-        }),
+        preserve_types=frozenset({EntityType.NAME}),
         description=(
-            "Full identity masking for loan applications. "
-            "Financial figures (numbers) are not PII and are not masked."
+            "Mask national IDs and financial accounts; preserve borrower name for application record context."
         ),
     ),
 
     TaskType.KYC_ANALYSIS: TaskMaskingRule(
         task_type=TaskType.KYC_ANALYSIS,
         additional_mask_types=frozenset({
-            EntityType.NAME, EntityType.EMAIL, EntityType.PHONE,
+            EntityType.EMAIL, EntityType.PHONE,
             EntityType.ADDRESS, EntityType.DATE_OF_BIRTH,
         }),
-        preserve_types=frozenset(),
+        preserve_types=frozenset({EntityType.NAME}),
         description=(
-            "Strictest masking — KYC docs contain highly sensitive identity data. "
-            "All PII masked. LLM analyses document structure only."
+            "Mask Aadhaar, PAN, and credentials; keep customer name intact for customer verification record."
         ),
     ),
 
     TaskType.GENERAL: TaskMaskingRule(
         task_type=TaskType.GENERAL,
         additional_mask_types=frozenset({
-            EntityType.NAME, EntityType.EMAIL, EntityType.PHONE,
+            EntityType.EMAIL, EntityType.PHONE,
             EntityType.ADDRESS, EntityType.DATE_OF_BIRTH,
         }),
-        preserve_types=frozenset(),
-        description="Default full-masking rule for unrecognised task types.",
+        preserve_types=frozenset({EntityType.NAME}),
+        description="Default rule: names preserved for business context; national IDs and contact numbers masked.",
     ),
 }
 
